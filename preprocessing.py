@@ -7,6 +7,12 @@ from collections import Counter
 data_folder = 'data'
 metadata_folder = 'metadata'
 
+statistics_path = 'statistics.json'
+
+
+def data_filter(record):
+    return record['Country'] == 'Nepal'
+
 
 # parses strings into date objects, strings, floats and ints
 def coerce(key, value):
@@ -43,8 +49,7 @@ def coerce(key, value):
         return value
 
 
-def get_data(recordFilter=None):
-    recordFilter = recordFilter or (lambda x: True)
+def get_data():
 
     # linearize the class lookups
     action_reformatter = {}
@@ -70,7 +75,7 @@ def get_data(recordFilter=None):
             for line in datafile:
                 parsed = {head: coerce(head, value) for head, value in zip(headers, line[:-1].split('\t'))}
 
-                if not recordFilter(parsed):
+                if not data_filter(parsed):
                     continue
 
                 if parsed['CAMEO Code'] not in action_reformatter:
@@ -85,9 +90,66 @@ def get_data(recordFilter=None):
                 yield parsed
 
 
-def country_filter(country):
-    return lambda record: record['Country'] == country
+def compute_statistics():
+    print('Computing summary statistics about predictors')
+
+    statistics = {
+        'Event Date': {
+            'count': 0,
+            'mean': 0,
+            'sq_diff': 0
+        },
+        'Latitude': {
+            'count': 0,
+            'mean': 0,
+            'sq_diff': 0
+        },
+        'Longitude': {
+            'count': 0,
+            'mean': 0,
+            'sq_diff': 0
+        },
+        'Source Base Sector': {
+            'uniques': set()
+        },
+        'Target Base Sector': {
+            'uniques': set()
+        }
+    }
+
+    def update_continuous(value, params):
+        if not value:
+            return
+        # Welford's Online Algorithm for computing mean/variance
+        params['count'] += 1
+        delta = value - params['mean']
+        params['mean'] += delta / params['count']
+        delta2 = value - params['mean']
+        params['sq_diff'] += delta * delta2
+
+    def update_categorical(value, params):
+        if not value:
+            return
+        params['uniques'].add(value)
+
+    for record in get_data():
+        update_continuous(record['Event Date'].timestamp(), statistics['Event Date'])
+        update_continuous(record['Latitude'], statistics['Latitude'])
+        update_continuous(record['Longitude'], statistics['Longitude'])
+        update_categorical(record['Source Base Sector'], statistics['Source Base Sector'])
+        update_categorical(record['Target Base Sector'], statistics['Target Base Sector'])
+
+    for variable in statistics.values():
+        if 'sq_diff' in variable:
+            variable['sample_variance'] = variable['sq_diff'] / (variable['count'] - 1)
+        if 'uniques' in variable:
+            variable['uniques'] = list(variable['uniques'])
+
+    json.dump(statistics, open(os.path.join(os.getcwd(), statistics_path), 'w'), indent=4)
 
 
-for observation in get_data(country_filter('United States')):
-    print(observation['Country'])
+if not os.path.exists(os.path.join(os.getcwd(), statistics_path)):
+    compute_statistics()
+
+for observation in get_data():
+    print(observation)
