@@ -43,7 +43,9 @@ def coerce(key, value):
         return value
 
 
-def get_data():
+def get_data(recordFilter=None):
+    recordFilter = recordFilter or (lambda x: True)
+
     # linearize the class lookups
     action_reformatter = {}
     with open(os.path.join(os.getcwd(), metadata_folder, 'action.json'), 'r') as actionfile:
@@ -68,6 +70,9 @@ def get_data():
             for line in datafile:
                 parsed = {head: coerce(head, value) for head, value in zip(headers, line[:-1].split('\t'))}
 
+                if not recordFilter(parsed):
+                    continue
+
                 if parsed['CAMEO Code'] not in action_reformatter:
                     continue
 
@@ -80,5 +85,9 @@ def get_data():
                 yield parsed
 
 
-for observation in get_data():
-    pass
+def country_filter(country):
+    return lambda record: record['Country'] == country
+
+
+for observation in get_data(country_filter('United States')):
+    print(observation['Country'])
