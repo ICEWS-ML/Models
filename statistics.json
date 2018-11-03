@@ -1,48 +1,46 @@
 {
     "Event Date": {
-        "count": 862,
-        "mean": 1497112638.51508,
-        "sq_diff": 5.899711394937338e+16,
-        "sample_variance": 68521618988819.25
+        "count": 440,
+        "mean": 1496932494.545455,
+        "min": 1483336800.0,
+        "max": 1514700000.0
     },
     "Latitude": {
-        "count": 862,
-        "mean": 27.78737296983755,
-        "sq_diff": 290.9335953401949,
-        "sample_variance": 0.33790196903623104
+        "count": 440,
+        "mean": 27.82410295454545,
+        "sample_variance": 0.5016105662099292
     },
     "Longitude": {
-        "count": 862,
-        "mean": 84.82133329466352,
-        "sq_diff": 1770.6114515544355,
-        "sample_variance": 2.0564592933268706
+        "count": 440,
+        "mean": 84.5874786363637,
+        "sample_variance": 2.99592425371112
     },
     "Source Base Sector": {
         "uniques": [
+            "Parties",
+            "Dissident",
             "Unidentified Forces",
             "International Religious",
-            "Ideological",
-            "Government",
-            "Nongovernmental Organizations / Activists",
-            "International Government Organization",
-            "Parties",
-            "Social",
             "Elite",
-            "Dissident"
+            "International Government Organization",
+            "Social",
+            "Nongovernmental Organizations / Activists",
+            "Government",
+            "Ideological"
         ]
     },
     "Target Base Sector": {
         "uniques": [
+            "Parties",
+            "Dissident",
             "Unidentified Forces",
             "International Religious",
-            "Ideological",
-            "Government",
-            "Nongovernmental Organizations / Activists",
-            "International Government Organization",
-            "Parties",
-            "Social",
             "Elite",
-            "Dissident"
+            "International Government Organization",
+            "Social",
+            "Nongovernmental Organizations / Activists",
+            "Government",
+            "Ideological"
         ]
     }
 }
