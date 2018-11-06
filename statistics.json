@@ -18,29 +18,47 @@
     "Source Base Sector": {
         "uniques": [
             "Parties",
+            "International Religious",
+            "International Government Organization",
+            "Nongovernmental Organizations / Activists",
+            "Social",
+            "Elite",
+            "Ideological",
             "Dissident",
             "Unidentified Forces",
-            "International Religious",
-            "Elite",
-            "International Government Organization",
-            "Social",
-            "Nongovernmental Organizations / Activists",
-            "Government",
-            "Ideological"
+            "Government"
         ]
     },
     "Target Base Sector": {
         "uniques": [
             "Parties",
+            "International Religious",
+            "International Government Organization",
+            "Nongovernmental Organizations / Activists",
+            "Social",
+            "Elite",
+            "Ideological",
             "Dissident",
             "Unidentified Forces",
-            "International Religious",
-            "Elite",
-            "International Government Organization",
-            "Social",
-            "Nongovernmental Organizations / Activists",
-            "Government",
-            "Ideological"
+            "Government"
+        ]
+    },
+    "PLOVER": {
+        "uniques": [
+            "THREATEN",
+            "AID",
+            "DISAPPROVE",
+            "INVESTIGATE",
+            "PROTEST",
+            "CONSULT",
+            "SANCTION",
+            "ASSAULT",
+            "REJECT",
+            "COERCE",
+            "DEMAND",
+            "RETREAT",
+            "SUPPORT",
+            "AGREE"
         ]
     }
 }

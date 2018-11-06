@@ -120,6 +120,9 @@ def compute_statistics():
         },
         'Target Base Sector': {
             'uniques': set()
+        },
+        'PLOVER': {
+            'uniques': set()
         }
     }
 
@@ -145,6 +148,8 @@ def compute_statistics():
         params['uniques'].add(value)
 
     for record in get_data():
+        update_categorical(record['PLOVER'], statistics['PLOVER'])
+
         update_uniform(record['Event Date'].timestamp(), statistics['Event Date'])
         update_continuous(record['Latitude'], statistics['Latitude'])
         update_continuous(record['Longitude'], statistics['Longitude'])
@@ -168,7 +173,7 @@ summary_statistics = json.load(open(os.path.join(os.getcwd(), statistics_path), 
 
 
 # turn a categorical variable into a one-hot vector
-def dummify(variable, record):
+def onehot(variable, record):
     vector = np.zeros(len(summary_statistics[variable]['uniques']))
     vector[summary_statistics[variable]['uniques'].index(record[variable])] = 1.
     return vector
@@ -180,10 +185,21 @@ def preprocess(record):
         (record['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
         (record['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
         (record['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
-        *dummify('Source Base Sector', record),
-        *dummify('Target Base Sector', record)
+        *onehot('Source Base Sector', record),
+        *onehot('Target Base Sector', record)
     ])
 
 
-for i, observation in enumerate(get_data(), 1):
+predictors = ['Event Date', 'Latitude', 'Longitude', 'Source Base Sector', 'Target Base Sector']
+
+for i, observation in enumerate(get_data()):
+    print(f'\nObservation: {i}')
+
+    print(observation['PLOVER'])
+    print(onehot('PLOVER', observation))
+
+    print('Predictors')
+    print({key: observation[key] for key in predictors})
+
+    print('Preprocessed predictors')
     print(preprocess(observation))
