@@ -161,7 +161,7 @@ def compute_statistics():
             variable['sample_variance'] = variable['sq_diff'] / (variable['count'] - 1)
             del variable['sq_diff']
         if 'uniques' in variable:
-            variable['uniques'] = list(variable['uniques'])
+            variable['uniques'] = list(sorted(variable['uniques']))
 
     json.dump(statistics, open(os.path.join(os.getcwd(), statistics_path), 'w'), indent=4)
 
