@@ -101,6 +101,30 @@ def get_data():
                 yield parsed
 
 
+# returns data aggregated by month. The measures are column names that have 'unique' lists in the summary_statistics
+def get_month(measures):
+
+    month_data = []
+    date = None
+
+    for observation in get_data():
+        if date is None:
+            date = observation['Event Date'].replace(day=1)
+
+        if observation['Event Date'].replace(day=1) != date:
+            output = {'Event Date': date}
+            for measure in ['PLOVER', *measures]:
+
+                counts = Counter(record[measure] for record in month_data)
+                output[measure] = np.array([counts[key] for key in summary_statistics[measure]['uniques']]) / len(month_data)
+
+            yield output
+
+            date = observation['Event Date'].replace(day=1)
+            month_data.clear()
+        month_data.append(observation)
+
+
 def compute_statistics():
     print('Computing summary statistics about predictors')
 
@@ -196,6 +220,11 @@ def preprocess(record):
     ])
 
 
+# this iterates through records aggregated by month
+# for i, observation in enumerate(get_month(['Source Base Sector', 'Target Base Sector'])):
+#     print(f'\nObservation: {i}')
+#     print(observation)
+
 predictors = ['Event Date', 'Latitude', 'Longitude', 'Source Base Sector', 'Target Base Sector']
 
 for i, observation in enumerate(get_data()):
@@ -204,10 +233,8 @@ for i, observation in enumerate(get_data()):
     print(observation['PLOVER'])
     print(onehot('PLOVER', observation))
 
-    print(observation)
     print('Predictors')
     print({key: observation[key] for key in predictors})
 
     print('Preprocessed predictors')
     print(preprocess(observation))
-
