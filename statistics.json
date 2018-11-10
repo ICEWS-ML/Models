@@ -45,20 +45,10 @@
     },
     "PLOVER": {
         "uniques": [
-            "AGREE",
-            "AID",
-            "ASSAULT",
-            "COERCE",
-            "CONSULT",
-            "DEMAND",
-            "DISAPPROVE",
-            "INVESTIGATE",
-            "PROTEST",
-            "REJECT",
-            "RETREAT",
-            "SANCTION",
-            "SUPPORT",
-            "THREATEN"
+            "Material conflict",
+            "Material cooperation",
+            "Verbal conflict",
+            "Verbal cooperation"
         ]
     }
 }

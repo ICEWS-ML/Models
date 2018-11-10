@@ -55,11 +55,17 @@ def coerce(key, value):
 def get_data():
 
     # linearize the class lookups
+    plover_categories = {}
+    with open(os.path.join(os.getcwd(), metadata_folder, 'quad_categories.json'), 'r') as categoryfile:
+        for quad_code, plover_codes in json.load(categoryfile).items():
+            for plover_code in plover_codes:
+                plover_categories[plover_code] = quad_code
+
     action_reformatter = {}
     with open(os.path.join(os.getcwd(), metadata_folder, 'action.json'), 'r') as actionfile:
         for alignment in json.load(actionfile):
             if 'PLOVER' in alignment and 'CAMEO' in alignment:
-                action_reformatter[alignment['CAMEO']] = alignment['PLOVER']
+                action_reformatter[alignment['CAMEO']] = plover_categories[alignment['PLOVER']]
 
     sector_reformatter = json.load(open(os.path.join(os.getcwd(), metadata_folder, 'sectors.json'), 'r'))
 
@@ -198,8 +204,10 @@ for i, observation in enumerate(get_data()):
     print(observation['PLOVER'])
     print(onehot('PLOVER', observation))
 
+    print(observation)
     print('Predictors')
     print({key: observation[key] for key in predictors})
 
     print('Preprocessed predictors')
     print(preprocess(observation))
+

@@ -1,0 +1,28 @@
+{
+  "Material conflict": [
+    "PROTEST",
+    "CRIME",
+    "MOBILIZE",
+    "COERCE",
+    "ASSAULT"
+  ],
+  "Material cooperation": [
+    "COOPERATE",
+    "AID",
+    "RETREAT",
+    "INVESTIGATE"
+  ],
+  "Verbal conflict": [
+    "DEMAND",
+    "DISAPPROVE",
+    "REJECT",
+    "THREATEN",
+    "SANCTION"
+  ],
+  "Verbal cooperation": [
+    "AGREE",
+    "CONSULT",
+    "SUPPORT",
+    "CONCEDE"
+  ]
+}
