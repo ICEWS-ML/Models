@@ -1,2 +1,4 @@
 .idea/
 data/
+datafile_onehot.csv
+datafile_ordinal.csv

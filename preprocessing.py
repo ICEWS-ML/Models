@@ -4,6 +4,8 @@ from datetime import datetime
 from collections import Counter
 import numpy as np
 
+from sklearn.model_selection import train_test_split
+
 np.set_printoptions(suppress=True, precision=4)
 
 data_folder = 'data'
@@ -227,14 +229,48 @@ def preprocess(record):
 
 predictors = ['Event Date', 'Latitude', 'Longitude', 'Source Base Sector', 'Target Base Sector']
 
-for i, observation in enumerate(get_data()):
-    print(f'\nObservation: {i}')
 
-    print(observation['PLOVER'])
-    print(onehot('PLOVER', observation))
+def write_ordinal_dataset():
+    with open('datafile_ordinal.csv', 'w') as data_file:
 
-    print('Predictors')
-    print({key: observation[key] for key in predictors})
+        for observation in get_data():
+            output = np.array([
+                summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),
+                (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
+                (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
+                (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
+                summary_statistics['Source Base Sector']['uniques'].index(observation['Source Base Sector']),
+                summary_statistics['Target Base Sector']['uniques'].index(observation['Target Base Sector'])
+            ])
 
-    print('Preprocessed predictors')
-    print(preprocess(observation))
+            data_file.write(', '.join([str(attribute) for attribute in output]) + '\n')
+
+
+def write_onehot_dataset():
+    with open('datafile_onehot.csv', 'w') as data_file:
+
+        for i, observation in enumerate(get_data()):
+
+            output = np.array([
+                *onehot('PLOVER', observation),
+                *preprocess(observation)
+            ])
+
+            data_file.write(', '.join([str(attribute) for attribute in output]) + '\n')
+
+
+def demonstration():
+    for observation in get_data():
+        print(f'\nObservation: {i}')
+
+        print(observation['PLOVER'])
+        print(onehot('PLOVER', observation))
+
+        print('Predictors')
+        print({key: observation[key] for key in predictors})
+
+        print('Preprocessed predictors')
+        print(preprocess(observation))
+
+
+write_ordinal_dataset()
