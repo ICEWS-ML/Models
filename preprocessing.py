@@ -4,14 +4,14 @@ from datetime import datetime
 from collections import Counter
 import numpy as np
 
-from sklearn.model_selection import train_test_split
-
 np.set_printoptions(suppress=True, precision=4)
 
 data_folder = 'data'
 metadata_folder = 'metadata'
 
 statistics_path = 'statistics.json'
+
+predictors = ['Event Date', 'Latitude', 'Longitude', 'Source Base Sector', 'Target Base Sector']
 
 
 # NOTE: if you change your filter/subset, delete statistics.json to recompute new summary statistics
@@ -211,66 +211,46 @@ def onehot(variable, record):
     return vector
 
 
-# return only the predictors, with continuous variables standardized and dummy expansions of categorical variables
-def preprocess(record):
-    return np.array([
-        (record['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
-        (record['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
-        (record['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
-        *onehot('Source Base Sector', record),
-        *onehot('Target Base Sector', record)
-    ])
-
-
 # this iterates through records aggregated by month
 # for i, observation in enumerate(get_month(['Source Base Sector', 'Target Base Sector'])):
 #     print(f'\nObservation: {i}')
 #     print(observation)
 
-predictors = ['Event Date', 'Latitude', 'Longitude', 'Source Base Sector', 'Target Base Sector']
-
-
-def write_ordinal_dataset():
-    with open('datafile_ordinal.csv', 'w') as data_file:
-
-        for observation in get_data():
-            output = np.array([
-                summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),
-                (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
-                (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
-                (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
-                summary_statistics['Source Base Sector']['uniques'].index(observation['Source Base Sector']),
-                summary_statistics['Target Base Sector']['uniques'].index(observation['Target Base Sector'])
-            ])
-
-            data_file.write(', '.join([str(attribute) for attribute in output]) + '\n')
-
-
-def write_onehot_dataset():
-    with open('datafile_onehot.csv', 'w') as data_file:
-
-        for i, observation in enumerate(get_data()):
-
-            output = np.array([
-                *onehot('PLOVER', observation),
-                *preprocess(observation)
-            ])
-
-            data_file.write(', '.join([str(attribute) for attribute in output]) + '\n')
-
-
-def demonstration():
+def onehot_sampler():
     for observation in get_data():
-        print(f'\nObservation: {i}')
+        yield np.array([
+            # MinMax
+            (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
+            # Standardize
+            (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
+            # Standardize
+            (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
+            *onehot('Source Base Sector', observation),
+            *onehot('Target Base Sector', observation)
+        ]), onehot('PLOVER', observation)
 
-        print(observation['PLOVER'])
-        print(onehot('PLOVER', observation))
 
-        print('Predictors')
-        print({key: observation[key] for key in predictors})
+def ordinal_sampler():
+    for observation in get_data():
+        yield np.array([
+            # MinMax
+            (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
+            # Standardize
+            (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
+            # Standardize
+            (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
+            summary_statistics['Source Base Sector']['uniques'].index(observation['Source Base Sector']),
+            summary_statistics['Target Base Sector']['uniques'].index(observation['Target Base Sector'])
+        ]), (summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),)
 
-        print('Preprocessed predictors')
-        print(preprocess(observation))
+
+def write_dataset(dataset, filename):
+    with open(filename, 'w') as data_file:
+        for X, Y in dataset:
+            data_file.write(', '.join([str(attribute) for attribute in (*Y, *X)]) + '\n')
 
 
-write_ordinal_dataset()
+# this code only runs if you run preprocessing.py explicitly
+if __name__ == '__main__':
+    write_dataset(onehot_sampler(), 'datafile_onehot.csv')
+    write_dataset(ordinal_sampler(), 'datafile_ordinal.csv')

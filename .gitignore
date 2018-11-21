@@ -2,3 +2,4 @@
 data/
 datafile_onehot.csv
 datafile_ordinal.csv
+__pycache__/
