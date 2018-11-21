@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from collections import Counter
+from collections import deque, Counter
 import numpy as np
 
 np.set_printoptions(suppress=True, precision=4)
@@ -242,6 +242,39 @@ def ordinal_sampler():
             summary_statistics['Source Base Sector']['uniques'].index(observation['Source Base Sector']),
             summary_statistics['Target Base Sector']['uniques'].index(observation['Target Base Sector'])
         ]), (summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),)
+
+
+def day_sampler(window=1):
+    """Assuming observations from dataset are (x, y), compute the density of the y's over the next n days
+
+    Args:
+        window (int): how many days to use in the density
+    Yield:
+        [(x₁, y₁), (x₂, y₂), ...)]: where ∀xᵢ are part of the same day, and y is a density over the next {offset} days
+    """
+    buffer = deque()
+
+    dataset = onehot_sampler()
+
+    def add_day(day):
+        # indexed: [newest day][first observation][first element of train pair][date index]
+        if len(buffer) and buffer[-1][0][0][0] == day[0][0]:
+            buffer[-1].append(day)
+        else:
+            buffer.append([day])
+
+    while len(buffer) <= window + 1:
+        add_day(next(dataset))
+
+    for observation in dataset:
+        add_day(observation)
+
+        if len(buffer) > window + 1:
+            current_day = buffer.popleft()
+            temp = buffer.pop()  # the last day only has one element outside the window
+            expected = np.mean([j[1] for i in buffer for j in i], axis=0)
+            buffer.append(temp)
+            yield [(record[0], expected) for record in current_day]
 
 
 def write_dataset(dataset, filename):

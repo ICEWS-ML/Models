@@ -2,7 +2,7 @@ import torch
 
 
 class LSTMClassifier(torch.nn.Module):
-    def __init__(self, input_size, output_size, hidden_dim=20, lstm_layers=1, batch_size=1):
+    def __init__(self, input_size, output_size, hidden_dim=20, lstm_layers=1):
         """Network initialization
 
         Args:
@@ -10,14 +10,12 @@ class LSTMClassifier(torch.nn.Module):
             output_size: number of classes in a prediction
             hidden_dim: number of features in each lstm hidden layer
             lstm_layers: number of layers in the lstm
-            batch_size: number of observations at each time step
         """
 
         super().__init__()
         # number of output nodes from LSTM, and input nodes to typical linear layer
         self.hidden_dim = hidden_dim
         self.lstm_layers = lstm_layers
-        self.batch_size = batch_size
 
         # outputs an intermediate feature vector
         self.lstm = torch.nn.LSTM(input_size=input_size, hidden_size=hidden_dim, num_layers=lstm_layers)
@@ -25,12 +23,17 @@ class LSTMClassifier(torch.nn.Module):
         # linear layer maps from intermediate feature space to class label
         self.linear = torch.nn.Linear(hidden_dim, output_size)
         # activation transforms features to probability vector
-        self.activation_final = torch.nn.LogSoftmax(dim=1)
+        self.activation_final = torch.nn.Softmax(dim=1)
 
+    def lstm_state_init(self, batch_size):
+        """sets the state of the lstm gates"""
         self.lstm_state = (
-            torch.randn(self.lstm_layers, self.batch_size, self.hidden_dim),
-            torch.randn(self.lstm_layers, self.batch_size, self.hidden_dim)
+            torch.zeros(self.lstm_layers, batch_size, self.hidden_dim),
+            torch.zeros(self.lstm_layers, batch_size, self.hidden_dim)
         )
+
+        for tensor in self.lstm_state:
+            torch.nn.init.xavier_normal_(tensor)
 
     def forward(self, observation):
         """Given an observation, update lstm state and return the network prediction
@@ -46,5 +49,4 @@ class LSTMClassifier(torch.nn.Module):
 
         # after making an observation, save the output and update the internal state
         lstm_out, self.lstm_state = self.lstm(observation, self.lstm_state)
-
         return self.activation_final(self.linear(lstm_out))

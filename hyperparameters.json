@@ -1,7 +1,6 @@
 {
   "LSTM": {
     "hidden_dim": 20,
-    "lstm_layers": 1,
-    "batch_size": 1
+    "lstm_layers": 1
   }
 }
