@@ -244,7 +244,19 @@ def ordinal_sampler():
         ]), (summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),)
 
 
-def day_sampler(window=1):
+def day_sampler():
+    """Assuming observations from dataset are (x, y), group by the day"""
+    sampler = onehot_sampler()
+    buffer = [next(sampler)]
+    for observation in sampler:
+        if buffer[0][0][0] != observation[0][0]:
+            yield buffer
+            buffer = [observation]
+        buffer.append(observation)
+    yield buffer
+
+
+def day_offset_sampler(window=1):
     """Assuming observations from dataset are (x, y), compute the density of the y's over the next n days
 
     Args:

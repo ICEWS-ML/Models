@@ -32,9 +32,6 @@ class LSTMClassifier(torch.nn.Module):
             torch.zeros(self.lstm_layers, batch_size, self.hidden_dim)
         )
 
-        for tensor in self.lstm_state:
-            torch.nn.init.xavier_normal_(tensor)
-
     def forward(self, observation):
         """Given an observation, update lstm state and return the network prediction
 
