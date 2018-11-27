@@ -46,4 +46,4 @@ class LSTMClassifier(torch.nn.Module):
 
         # after making an observation, save the output and update the internal state
         lstm_out, self.lstm_state = self.lstm(observation, self.lstm_state)
-        return self.activation_final(self.linear(lstm_out))
+        return self.activation_final(self.linear(lstm_out)[0])

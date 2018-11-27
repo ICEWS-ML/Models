@@ -1,4 +1,4 @@
-from preprocessing import onehot_sampler, day_sampler
+from preprocessing import day_sampler
 from models.lstm.train import train as train_lstm
 
 import json

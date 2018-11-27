@@ -216,38 +216,51 @@ def onehot(variable, record):
 #     print(f'\nObservation: {i}')
 #     print(observation)
 
-def onehot_sampler():
-    for observation in get_data():
-        yield np.array([
-            # MinMax
-            (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
-            # Standardize
-            (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
-            # Standardize
-            (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
-            *onehot('Source Base Sector', observation),
-            *onehot('Target Base Sector', observation)
-        ]), onehot('PLOVER', observation)
+def preprocess_sampler(x_format='OneHot', y_format='OneHot'):
+    if x_format not in ['OneHot', 'Ordinal'] or y_format not in ['OneHot', 'Ordinal']:
+        raise ValueError('Invalid format')
 
-
-def ordinal_sampler():
     for observation in get_data():
-        yield np.array([
-            # MinMax
-            (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
-            # Standardize
-            (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
-            # Standardize
-            (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
-            summary_statistics['Source Base Sector']['uniques'].index(observation['Source Base Sector']),
-            summary_statistics['Target Base Sector']['uniques'].index(observation['Target Base Sector'])
-        ]), (summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),)
+        if x_format == 'OneHot':
+            X = np.array([
+                # MinMax
+                (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (
+                        summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
+                # Standardize
+                (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude'][
+                    'sample_variance'],
+                # Standardize
+                (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude'][
+                    'sample_variance'],
+                *onehot('Source Base Sector', observation),
+                *onehot('Target Base Sector', observation)
+            ])
+        else:
+            X = np.array([
+                # MinMax
+                (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
+                # Standardize
+                (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
+                # Standardize
+                (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
+                summary_statistics['Source Base Sector']['uniques'].index(observation['Source Base Sector']),
+                summary_statistics['Target Base Sector']['uniques'].index(observation['Target Base Sector'])
+            ])
+
+        if y_format == 'OneHot':
+            Y = onehot('PLOVER', observation)
+        else:
+            Y = (summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),)
+
+        yield X, Y
 
 
 def day_sampler():
     """Assuming observations from dataset are (x, y), group by the day"""
-    sampler = onehot_sampler()
+    sampler = preprocess_sampler(x_format='OneHot', y_format='Ordinal')
     buffer = [next(sampler)]
+
+    print(buffer)
     for observation in sampler:
         if buffer[0][0][0] != observation[0][0]:
             yield buffer
@@ -266,7 +279,7 @@ def day_offset_sampler(window=1):
     """
     buffer = deque()
 
-    dataset = onehot_sampler()
+    sampler = preprocess_sampler(x_format='OneHot', y_format='Ordinal')
 
     def add_day(day):
         # indexed: [newest day][first observation][first element of train pair][date index]
@@ -276,9 +289,9 @@ def day_offset_sampler(window=1):
             buffer.append([day])
 
     while len(buffer) <= window + 1:
-        add_day(next(dataset))
+        add_day(next(sampler))
 
-    for observation in dataset:
+    for observation in sampler:
         add_day(observation)
 
         if len(buffer) > window + 1:
@@ -297,5 +310,5 @@ def write_dataset(dataset, filename):
 
 # this code only runs if you run preprocessing.py explicitly
 if __name__ == '__main__':
-    write_dataset(onehot_sampler(), 'datafile_onehot.csv')
-    write_dataset(ordinal_sampler(), 'datafile_ordinal.csv')
+    write_dataset(preprocess_sampler(x_format='OneHot', y_format='OneHot'), 'datafile_onehot.csv')
+    write_dataset(preprocess_sampler(x_format='Ordinal', y_format='Ordinal'), 'datafile_ordinal.csv')
