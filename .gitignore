@@ -3,3 +3,6 @@ data/
 datafile_onehot.csv
 datafile_ordinal.csv
 __pycache__/
+
+# don't store the model weights in the repository
+models/lstm/weights

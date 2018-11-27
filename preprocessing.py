@@ -13,10 +13,21 @@ statistics_path = 'statistics.json'
 
 predictors = ['Event Date', 'Latitude', 'Longitude', 'Source Base Sector', 'Target Base Sector']
 
+# the percentage of records that belongs to the train set
+split = .7
+
+# the seed for test/train split (a salt for the record ID hash, which determines the partition)
+part_salt = ''
+
 
 # NOTE: if you change your filter/subset, delete statistics.json to recompute new summary statistics
 def data_filter(record):
     return record['Country'] == 'Nepal'
+
+
+# returns the partition a record belongs to in a dataset. Note the same hash is used to build the
+def partition(record):
+    return 'test' if hash(record['Event ID'] + part_salt) % 100 < split * 100 else 'train'
 
 
 # parses strings into date objects, strings, floats and ints
@@ -180,6 +191,11 @@ def compute_statistics():
         params['uniques'].add(value)
 
     for record in get_data():
+
+        # only fit scalers to the train split of the dataset
+        if partition(record) != 'train':
+            continue
+
         update_categorical(record['PLOVER'], statistics['PLOVER'])
 
         update_uniform(record['Event Date'].timestamp(), statistics['Event Date'])
@@ -222,23 +238,22 @@ def preprocess_sampler(x_format='OneHot', y_format='OneHot'):
 
     for observation in get_data():
         if x_format == 'OneHot':
-            X = np.array([
+            stimulus = np.array([
                 # MinMax
                 (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (
                         summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
                 # Standardize
-                (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude'][
-                    'sample_variance'],
+                (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
                 # Standardize
-                (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude'][
-                    'sample_variance'],
+                (observation['Longitude'] - summary_statistics['Longitude']['mean']) / summary_statistics['Longitude']['sample_variance'],
                 *onehot('Source Base Sector', observation),
                 *onehot('Target Base Sector', observation)
             ])
         else:
-            X = np.array([
+            stimulus = np.array([
                 # MinMax
-                (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
+                (observation['Event Date'].timestamp() - summary_statistics['Event Date']['mean']) / (
+                        summary_statistics['Event Date']['max'] - summary_statistics['Event Date']['min']),
                 # Standardize
                 (observation['Latitude'] - summary_statistics['Latitude']['mean']) / summary_statistics['Latitude']['sample_variance'],
                 # Standardize
@@ -248,11 +263,11 @@ def preprocess_sampler(x_format='OneHot', y_format='OneHot'):
             ])
 
         if y_format == 'OneHot':
-            Y = onehot('PLOVER', observation)
+            expected = onehot('PLOVER', observation)
         else:
-            Y = (summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),)
+            expected = (summary_statistics['PLOVER']['uniques'].index(observation['PLOVER']),)
 
-        yield X, Y
+        yield stimulus, expected, partition(observation)
 
 
 def day_sampler():
@@ -260,7 +275,6 @@ def day_sampler():
     sampler = preprocess_sampler(x_format='OneHot', y_format='Ordinal')
     buffer = [next(sampler)]
 
-    print(buffer)
     for observation in sampler:
         if buffer[0][0][0] != observation[0][0]:
             yield buffer
@@ -302,9 +316,9 @@ def day_offset_sampler(window=1):
             yield [(record[0], expected) for record in current_day]
 
 
-def write_dataset(dataset, filename):
+def write_dataset(datastream, filename):
     with open(filename, 'w') as data_file:
-        for X, Y in dataset:
+        for X, Y in datastream:
             data_file.write(', '.join([str(attribute) for attribute in (*Y, *X)]) + '\n')
 
 
