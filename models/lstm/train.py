@@ -1,4 +1,5 @@
 from models.lstm.network import LSTMClassifier
+import numpy as np
 
 import torch
 
@@ -48,8 +49,26 @@ def train(data, hyperparameters=None, trainparameters=None):
             loss.backward()
             optimizer.step()
 
-    # with torch.no_grad():
-    #     model.lstm_state_init(1)
-    #     print(model(torch.from_numpy(first_x[None, None]).float()))
-
     torch.save(model.state_dict(), './models/lstm/weights')
+
+
+def test_lstm(data, hyperparameters=None):
+    model = LSTMClassifier(input_size=23, output_size=4, **(hyperparameters or {}))
+
+    model.load_state_dict(torch.load('./models/lstm/weights'))
+    model.eval()
+
+    for i, time_step in enumerate(iterator(data)):
+        print(f'Step: {i}')
+
+        labels = np.array([val == 'train' for val in time_step])
+
+        # format (X, Y) observations into torch tensors
+        stimulus = torch.stack([torch.tensor(observation[0]) for observation in time_step], dim=0)[None].float()
+        expected = torch.stack([torch.tensor(observation[1]) for observation in time_step], dim=0)[:, 0].long()
+
+        predicted = model(stimulus)
+
+        print(labels)
+        print(expected)
+        print(predicted)
