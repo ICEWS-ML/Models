@@ -322,6 +322,21 @@ def write_dataset(datastream, filename):
             data_file.write(', '.join([str(attribute) for attribute in (*Y, *X)]) + '\n')
 
 
+# this loads all data into memory
+def test_train_split(data):
+    x_train, y_train = [], []
+    x_test, y_test = [], []
+
+    for x, y, label in data:
+        if label == 'train':
+            x_train.append(x)
+            y_train.append(y)
+        else:
+            x_test.append(x)
+            y_test.append(y)
+    return x_train, y_train, x_test, y_test
+
+
 # this code only runs if you run preprocessing.py explicitly
 if __name__ == '__main__':
     write_dataset(preprocess_sampler(x_format='OneHot', y_format='OneHot'), 'datafile_onehot.csv')

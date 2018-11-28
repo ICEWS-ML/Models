@@ -1,2 +1,4 @@
 torch>=0.4
 numpy
+scikit-learn
+xgboost

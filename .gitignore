@@ -7,3 +7,6 @@ __pycache__/
 # don't store the model weights in the repository
 models/lstm/weights
 models/random_forest/weights
+
+parameters.csv
+scores.csv
