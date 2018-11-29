@@ -1,4 +1,4 @@
-from preprocessing import day_sampler, preprocess_sampler, test_train_split
+from preprocessing import preprocess_sampler, test_train_split
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
