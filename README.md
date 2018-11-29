@@ -14,3 +14,7 @@ The downloaded file must be placed in a new folder called ./data/
 
 A description of the preprocessing steps is available here:  
 https://docs.google.com/document/d/1YYf_qM8MfkwBVvq8iVjK1Xh4naXmycGzkk6l7LC-JxI/edit?usp=sharing
+
+
+The final paper is available here:
+https://docs.google.com/document/d/1RXUjJdxPuto0qyAJDa93SjrbcBObNgsBH5YfDHRgxxE/edit
