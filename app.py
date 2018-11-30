@@ -72,8 +72,8 @@ for model_spec in model_specifications:
 
     # catch warnings in bulk, show frequencies for each after grid search
     with warnings.catch_warnings(record=True) as warns:
-        # if model_spec['name'] != 'LSTM':
-        #     continue
+        if model_spec['name'] != 'TorchANN':
+            continue
 
         print(f'{model_spec["name"]}: Tuning hyper-parameters')
 

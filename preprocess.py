@@ -113,6 +113,7 @@ def get_data():
 
                 yield parsed
 
+
 def compute_statistics():
     print('Computing summary statistics about predictors')
 
@@ -242,8 +243,8 @@ def preprocess_sampler(x_format='OneHot', y_format='OneHot'):
 
 def write_dataset(datastream, filename):
     with open(filename, 'w') as data_file:
-        for X, Y in datastream:
-            data_file.write(', '.join([str(attribute) for attribute in (*Y, *X)]) + '\n')
+        for X, Y, split in datastream:
+            data_file.write(', '.join([str(attribute) for attribute in (*Y, *X, split)]) + '\n')
 
 
 # this loads all data into memory

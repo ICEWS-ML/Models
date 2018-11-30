@@ -12,6 +12,8 @@ from sklearn.ensemble import GradientBoostingClassifier
 from xgboost import XGBClassifier
 
 from models.lstm.network import LSTMClassifier
+from models.ann.network import ANNClassifier
+
 from skorch import NeuralNetClassifier
 import torch
 
@@ -163,7 +165,7 @@ model_specifications = [
         }
     },
     {
-        "name": "LSTM",
+        "name": "TorchLSTM",
         "class": NeuralNetClassifier,
         "kwargs": {
             "module": LSTMClassifier,
@@ -179,6 +181,25 @@ model_specifications = [
             "module__hidden_dim": [5, 20, 50],  # dimensionality of the hidden LSTM layers
             "module__lstm_layers": [1, 4],  # number of LSTM layers
             "module__batch_size": [1],
+
+            "optimizer__lr": [0.001, 0.1, 0.5],
+        }
+    },
+    {
+        "name": "TorchANN",
+        "class": NeuralNetClassifier,
+        "kwargs": {
+            "module": ANNClassifier,
+            "criterion": torch.nn.NLLLoss,
+            "optimizer": torch.optim.SGD,
+            "batch_size": 1,
+            "max_epochs": 5
+        },
+        "hyperparameters": {
+            "module__input_size": [23],
+            "module__output_size": [4],
+
+            "module__layer_sizes": [[10], [20, 10], []],  # dimensionality of the hidden LSTM layers
 
             "optimizer__lr": [0.001, 0.1, 0.5],
         }
