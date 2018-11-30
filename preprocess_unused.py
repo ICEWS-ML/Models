@@ -1,6 +1,6 @@
 # I tried a number of different preprocessing steps, a record of unused functions is kept here
 
-from preprocessing import get_data, preprocess_sampler, summary_statistics
+from preprocess import get_data, preprocess_sampler, summary_statistics
 import numpy as np
 
 from collections import deque, Counter
@@ -74,9 +74,6 @@ def day_offset_sampler(window=1):
             expected = np.mean([j[1] for i in buffer for j in i], axis=0)
             buffer.append(temp)
             yield [(record[0], expected) for record in current_day]
-
-
-
 
 
 # this iterates through records aggregated by month

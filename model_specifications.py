@@ -11,11 +11,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 
 from xgboost import XGBClassifier
 
-from models.lstm.network import LSTMClassifier
-from models.ann.network import ANNClassifier
-
-from skorch import NeuralNetClassifier
-import torch
+use_torch = False
 
 model_specifications = [
     {
@@ -51,7 +47,7 @@ model_specifications = [
                 "adaptive"
             ],
             "alpha": [0.0, 0.0001],
-            "max_iter": [40]
+            "max_iter": [5000]
         }
     },
     {
@@ -163,45 +159,56 @@ model_specifications = [
                 "dart"
             ]
         }
-    },
-    {
-        "name": "TorchLSTM",
-        "class": NeuralNetClassifier,
-        "kwargs": {
-            "module": LSTMClassifier,
-            "criterion": torch.nn.NLLLoss,
-            "optimizer": torch.optim.SGD,
-            "batch_size": 1,
-            "max_epochs": 5
-        },
-        "hyperparameters": {
-            "module__input_size": [23],
-            "module__output_size": [4],
-
-            "module__hidden_dim": [5, 20, 50],  # dimensionality of the hidden LSTM layers
-            "module__lstm_layers": [1, 4],  # number of LSTM layers
-            "module__batch_size": [1],
-
-            "optimizer__lr": [0.001, 0.1, 0.5],
-        }
-    },
-    {
-        "name": "TorchANN",
-        "class": NeuralNetClassifier,
-        "kwargs": {
-            "module": ANNClassifier,
-            "criterion": torch.nn.NLLLoss,
-            "optimizer": torch.optim.SGD,
-            "batch_size": 1,
-            "max_epochs": 5
-        },
-        "hyperparameters": {
-            "module__input_size": [23],
-            "module__output_size": [4],
-
-            "module__layer_sizes": [[10], [20, 10], []],  # dimensionality of the hidden LSTM layers
-
-            "optimizer__lr": [0.001, 0.1, 0.5],
-        }
     }
 ]
+
+
+if use_torch:
+    from models.lstm.network import LSTMClassifier
+    from models.ann.network import ANNClassifier
+
+    from skorch import NeuralNetClassifier
+    import torch
+
+    model_specifications.extend([
+        {
+            "name": "TorchLSTM",
+            "class": NeuralNetClassifier,
+            "kwargs": {
+                "module": LSTMClassifier,
+                "criterion": torch.nn.NLLLoss,
+                "optimizer": torch.optim.SGD,
+                "batch_size": 1,
+                "max_epochs": 5
+            },
+            "hyperparameters": {
+                "module__input_size": [23],
+                "module__output_size": [4],
+
+                "module__hidden_dim": [5, 20, 50],  # dimensionality of the hidden LSTM layers
+                "module__lstm_layers": [1, 4],  # number of LSTM layers
+                "module__batch_size": [1],
+
+                "optimizer__lr": [0.001, 0.1, 0.5],
+            }
+        },
+        {
+            "name": "TorchANN",
+            "class": NeuralNetClassifier,
+            "kwargs": {
+                "module": ANNClassifier,
+                "criterion": torch.nn.NLLLoss,
+                "optimizer": torch.optim.SGD,
+                "batch_size": 1,
+                "max_epochs": 5
+            },
+            "hyperparameters": {
+                "module__input_size": [23],
+                "module__output_size": [4],
+
+                "module__layer_sizes": [[10], [20, 10], []],  # dimensionality of the hidden LSTM layers
+
+                "optimizer__lr": [0.001, 0.1, 0.5],
+            }
+        }
+    ])

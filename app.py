@@ -1,4 +1,4 @@
-from preprocessing import preprocess_sampler, test_train_split
+from preprocess import preprocess_sampler, test_train_split
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -14,11 +14,11 @@ import json
 from model_specifications import model_specifications
 from sklearn.model_selection import GridSearchCV
 
-from skorch import NeuralNetClassifier
-import torch
+
+print_results = True
 
 
-def evaluate(expected, actual, print_results=True):
+def evaluate(expected, actual):
     """Collect diagnostics about model performance
 
     Args:
@@ -30,7 +30,6 @@ def evaluate(expected, actual, print_results=True):
         print("\nDetailed classification report:")
         print("The model is trained on the full development set.")
         print("The scores are computed on the full evaluation set.")
-        print(expected, actual)
         print(classification_report(expected, actual))
 
         print("\nDetailed confusion matrix:")
@@ -45,9 +44,6 @@ def evaluate(expected, actual, print_results=True):
         f1_score(expected, actual, average='micro'),
         accuracy_score(expected, actual),
     ]
-
-
-print_results = True
 
 
 def run_lstm():
@@ -65,15 +61,12 @@ x_train, y_train, x_test, y_test = [np.array(val) for val in split]
 # remove the singleton axis from y, ensure long datatype
 y_train, y_test = [np.squeeze(val.astype(np.int64)) for val in (y_train, y_test)]
 
-print('train shape')
-print(x_train.shape)
-
 for model_spec in model_specifications:
 
     # catch warnings in bulk, show frequencies for each after grid search
     with warnings.catch_warnings(record=True) as warns:
-        if model_spec['name'] != 'TorchANN':
-            continue
+        # if model_spec['name'] != 'TorchANN':
+        #     continue
 
         print(f'{model_spec["name"]}: Tuning hyper-parameters')
 
@@ -101,7 +94,7 @@ for model_spec in model_specifications:
             print('Warnings during grid search:')
             print(json.dumps(warning_counts, indent=4))
 
-        scores = evaluate(y_true, y_pred, print_results=print_results)
+        scores = evaluate(y_true, y_pred)
         scores = [round(score, 4) for score in scores]
 
         all_scores.append([model_spec['name'], *scores])
