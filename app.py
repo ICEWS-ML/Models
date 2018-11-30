@@ -11,33 +11,11 @@ from collections import Counter
 
 import json
 
+from model_specifications import model_specifications
 from sklearn.model_selection import GridSearchCV
 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import SVC
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.ensemble import BaggingClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from xgboost import XGBClassifier
-
-sklearn_models = {
-    'Decision Tree': DecisionTreeClassifier,
-    'Neural Network': MLPClassifier,
-    'SVM': SVC,
-    'Gaussian Naive Bayes': GaussianNB,
-    'Logistic Regression': LogisticRegression,
-    'K Nearest Neighbors': KNeighborsClassifier,
-    'Bagging Classifier': BaggingClassifier,
-    'Random Forest': RandomForestClassifier,
-    'AdaBoost': AdaBoostClassifier,
-    'Gradient Boosting Classifier': GradientBoostingClassifier,
-    'XGBoost': XGBClassifier
-}
+from skorch import NeuralNetClassifier
+import torch
 
 
 def evaluate(expected, actual, print_results=True):
@@ -75,11 +53,7 @@ print_results = True
 def run_lstm():
     from models.lstm.train import train as train_lstm, test_lstm
     # train_lstm(day_sampler, params['LSTM'])
-    test_lstm(day_sampler, params['LSTM'])
-
-
-with open('model_grids.json', 'r') as param_file:
-    model_grids = json.load(param_file)
+    test_lstm(lambda: preprocess_sampler(x_format='OneHot', y_format='Ordinal'), params['LSTM'])
 
 
 all_scores = []
@@ -88,30 +62,39 @@ all_parameters = []
 split = test_train_split(preprocess_sampler(x_format='OneHot', y_format='Ordinal'))
 x_train, y_train, x_test, y_test = [np.array(val) for val in split]
 
+# remove the singleton axis from y, ensure long datatype
+y_train, y_test = [np.squeeze(val.astype(np.int64)) for val in (y_train, y_test)]
 
-for model in model_grids:
+print('train shape')
+print(x_train.shape)
 
-    y_true, y_pred, best_params = None, None, None
+for model_spec in model_specifications:
 
     # catch warnings in bulk, show frequencies for each after grid search
     with warnings.catch_warnings(record=True) as warns:
-        print(f'{model["name"]}: Tuning hyper-parameters')
+        # if model_spec['name'] != 'LSTM':
+        #     continue
 
-        if model['library'] == 'sklearn':
-            clf = GridSearchCV(sklearn_models[model['name']](), model['parameters'], cv=5, scoring='accuracy')
-            clf.fit(x_train, y_train)
-            y_true, y_pred = np.array(y_test)[:, 0], clf.predict(x_test)
+        print(f'{model_spec["name"]}: Tuning hyper-parameters')
 
-            best_params = clf.best_params_
+        # create an instance of the model
+        model = model_spec['class'](**(model_spec.get('kwargs', {})))
 
-            if print_results:
-                print("Grid scores on development set:")
-                means = clf.cv_results_['mean_test_score']
-                stds = clf.cv_results_['std_test_score']
-                params = clf.cv_results_['params']
+        search = GridSearchCV(model, model_spec['hyperparameters'], cv=5, scoring='accuracy')
+        search.fit(x_train, y_train)
 
-                for mean, std, params in zip(means, stds, params):
-                    print("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params))
+        y_true, y_pred = y_test, search.predict(x_test)
+
+        best_params = search.best_params_
+
+        if print_results:
+            print("Grid scores on development set:")
+            means = search.cv_results_['mean_test_score']
+            stds = search.cv_results_['std_test_score']
+            params = search.cv_results_['params']
+
+            for mean, std, params in zip(means, stds, params):
+                print("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params))
 
         warning_counts = dict(Counter([str(warn.category) for warn in warns]))
         if warning_counts:
@@ -121,9 +104,9 @@ for model in model_grids:
         scores = evaluate(y_true, y_pred, print_results=print_results)
         scores = [round(score, 4) for score in scores]
 
-        all_scores.append([model['name'], *scores])
+        all_scores.append([model_spec['name'], *scores])
         all_parameters.append([
-            model['name'],
+            model_spec['name'],
             *[f'{key}={value}' for key, value in best_params.items()]
         ])
 

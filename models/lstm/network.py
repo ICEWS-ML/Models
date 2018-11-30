@@ -2,7 +2,7 @@ import torch
 
 
 class LSTMClassifier(torch.nn.Module):
-    def __init__(self, input_size, output_size, hidden_dim=20, lstm_layers=1):
+    def __init__(self, input_size, output_size, hidden_dim=20, lstm_layers=1, batch_size=1):
         """Network initialization
 
         Args:
@@ -16,6 +16,7 @@ class LSTMClassifier(torch.nn.Module):
         # number of output nodes from LSTM, and input nodes to typical linear layer
         self.hidden_dim = hidden_dim
         self.lstm_layers = lstm_layers
+        self.batch_size = batch_size
 
         # outputs an intermediate feature vector
         self.lstm = torch.nn.LSTM(input_size=input_size, hidden_size=hidden_dim, num_layers=lstm_layers)
@@ -23,7 +24,9 @@ class LSTMClassifier(torch.nn.Module):
         # linear layer maps from intermediate feature space to class label
         self.linear = torch.nn.Linear(hidden_dim, output_size)
         # activation transforms features to probability vector
-        self.activation_final = torch.nn.Softmax(dim=1)
+        self.activation_final = torch.nn.LogSoftmax(dim=1)
+
+        self.lstm_state_init(batch_size)
 
     def lstm_state_init(self, batch_size):
         """sets the state of the lstm gates"""
@@ -36,14 +39,13 @@ class LSTMClassifier(torch.nn.Module):
         """Given an observation, update lstm state and return the network prediction
 
         Args:
-            observation: a matrix of dimension [sequence_length, batch_size, input_features]
-                sequence length: number of time steps represented in the tensor
+            observation: a matrix of dimension [batch_size, input_features]
                 batch_size: number of observations at each time step
                 input_features: number of features at each observation
         Return:
             torch.tensor: the output of the network
         """
-
+        # [None] adds an axis for sequence length: number of time steps represented in the tensor, which is one
         # after making an observation, save the output and update the internal state
-        lstm_out, self.lstm_state = self.lstm(observation, self.lstm_state)
-        return self.activation_final(self.linear(lstm_out)[0])
+        lstm_out, self.lstm_state = self.lstm(observation[None].float(), self.lstm_state)
+        return self.activation_final(self.linear(lstm_out[0]))
