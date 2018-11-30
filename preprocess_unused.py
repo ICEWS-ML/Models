@@ -1,6 +1,6 @@
 # I tried a number of different preprocessing steps, a record of unused functions is kept here
 
-from preprocess import get_data, preprocess_sampler, summary_statistics
+from preprocess import get_data, dataset_sampler, summary_statistics
 import numpy as np
 
 from collections import deque, Counter
@@ -32,7 +32,7 @@ def get_month(measures):
 
 def day_sampler():
     """Assuming observations from dataset are (x, y), group by the day"""
-    sampler = preprocess_sampler(x_format='OneHot', y_format='Ordinal')
+    sampler = dataset_sampler(x_format='OneHot', y_format='Ordinal')
     buffer = [next(sampler)]
 
     for observation in sampler:
@@ -53,7 +53,7 @@ def day_offset_sampler(window=1):
     """
     buffer = deque()
 
-    sampler = preprocess_sampler(x_format='OneHot', y_format='Ordinal')
+    sampler = dataset_sampler(x_format='OneHot', y_format='Ordinal')
 
     def add_day(day):
         # indexed: [newest day][first observation][first element of train pair][date index]

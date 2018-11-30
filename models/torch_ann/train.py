@@ -1,4 +1,4 @@
-from models.simple.network import SimpleClassifier
+from models.torch_ann.network import ANNClassifier
 import numpy as np
 import torch
 
@@ -14,15 +14,22 @@ def filter_split(data, split='train'):
             yield x, y
 
 
-def train_simple(data, networkparameters):
+def train_ann(data, networkparameters, trainparameters=None):
+    torch.manual_seed(0)
 
-    model = SimpleClassifier(**networkparameters)
+    trainparameters = {
+        **{'epochs': 100, 'learning_rate': 0.5},
+        **(trainparameters or {})
+    }
+
+    model = ANNClassifier(**networkparameters)
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=trainparameters['learning_rate'])
 
-    for epoch in range(100):
+    for epoch in range(trainparameters['epochs']):
         for i, (x, y) in enumerate(filter_split(iterator(data), split='train')):
+            # print(f'Step: {i}')
 
             predicted = model(torch.from_numpy(x)[None])
             loss = criterion(predicted, torch.tensor(y).long())
@@ -35,14 +42,14 @@ def train_simple(data, networkparameters):
             # at each iteration, reset the gradients
             model.zero_grad()
 
-    torch.save(model.state_dict(), './models/simple/weights')
+    torch.save(model.state_dict(), './models/torch_ann/weights')
 
 
-def test_simple(data, networkparameters):
-    model = SimpleClassifier(**networkparameters)
+def test_ann(data, networkparameters):
+    model = ANNClassifier(**networkparameters)
 
-    model.load_state_dict(torch.load('./models/simple/weights'))
-    model.eval()
+    model.load_state_dict(torch.load('./models/torch_ann/weights'))
+    model.eval()  # turn on evaluation mode, which disables dropout
 
     expected, actual = [], []
 
@@ -51,4 +58,5 @@ def test_simple(data, networkparameters):
             actual.append(int(np.argmax(np.squeeze(model(torch.from_numpy(x)[None])))))
             expected.append(int(np.squeeze(np.array(y))))
 
+    print(actual)
     return expected, actual

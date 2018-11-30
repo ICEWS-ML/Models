@@ -1,4 +1,4 @@
-from preprocess import dataset_sampler, preprocess_sampler, test_train_split
+from preprocess import dataset_sampler, test_train_split
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -47,8 +47,8 @@ def evaluate(expected, actual):
 
 
 def run_lstm():
-    from models.lstm.train import train_lstm, test_lstm
-    sampler = lambda: dataset_sampler('datafile.csv')
+    from models.torch_lstm.train import train_lstm, test_lstm
+    sampler = lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal')
 
     params = {
         'input_size': 23,
@@ -63,87 +63,92 @@ def run_lstm():
 
 
 def run_ann():
-    from models.ann.train import train_ann, test_ann
-    sampler = lambda: dataset_sampler('datafile.csv')
+    from models.torch_ann.train import train_ann, test_ann
+    sampler = lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal')
 
     params = {
         'input_size': 23,
         'output_size': 4,
         'layer_sizes': (100, 20)
     }
-    # sampler = lambda: preprocess_sampler(x_format='OneHot', y_format='Ordinal')
     train_ann(sampler, params)
     evaluate(*test_ann(sampler, params))
 
 
 def run_simple():
-    from models.simple.train import train_simple, test_simple
-    sampler = lambda: dataset_sampler('datafile.csv')
+    from models.torch_simple.train import train_simple, test_simple
+    sampler = lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal')
 
     params = {
         'input_size': 23,
         'output_size': 4
     }
-    # sampler = lambda: preprocess_sampler(x_format='OneHot', y_format='Ordinal')
     train_simple(sampler, params)
     evaluate(*test_simple(sampler, params))
 
 
+def run_keras():
+    from models.keras_ann.network import train_keras, test_keras
+    sampler = lambda: dataset_sampler(x_format='OneHot', y_format='OneHot')
+    trainparams = {
+        'epochs': 200,
+        'batch_size': 10
+    }
+    train_keras(sampler, trainparams)
+    test_keras(sampler)
+
+
 # this code only runs if you run this file explicitly
 if __name__ == '__main__':
-    # run_lstm()
-    # 1 / 0
 
     all_scores = []
     all_parameters = []
 
-    split = test_train_split(dataset_sampler('datafile.csv'))
-    x_train, y_train, x_test, y_test = [np.array(val) for val in split]
-
-    # remove the singleton axis from y, ensure long datatype
-    y_train, y_test = [np.squeeze(val.astype(np.int64)) for val in (y_train, y_test)]
-
     for model_spec in model_specifications:
 
+        split = test_train_split(model_spec['datasource']())
+        x_train, y_train, x_test, y_test = [np.array(val) for val in split]
+
+        # remove the singleton axis from y if ordinal, and ensure long datatype
+        y_train, y_test = [np.squeeze(val.astype(np.int64)) for val in (y_train, y_test)]
+
         # catch warnings in bulk, show frequencies for each after grid search
-        # with warnings.catch_warnings(record=True) as warns:
-        if model_spec['name'] != 'TorchANN':
-            continue
+        with warnings.catch_warnings(record=True) as warns:
 
-        print(f'{model_spec["name"]}: Tuning hyper-parameters')
+            print(f'{model_spec["name"]}: Tuning hyper-parameters')
 
-        # create an instance of the model
-        model = model_spec['class'](**(model_spec.get('kwargs', {})))
+            # create an instance of the model
+            model = model_spec['class'](**(model_spec.get('kwargs', {})))
 
-        search = GridSearchCV(model, model_spec['hyperparameters'], cv=5, scoring='accuracy')
-        search.fit(x_train, y_train)
+            search = GridSearchCV(model, param_grid=model_spec['hyperparameters'], cv=5, scoring='accuracy')
+            search.fit(x_train, y_train)
 
-        y_true, y_pred = y_test, search.predict(x_test)
+            y_true, y_pred = y_test, search.predict(x_test)
 
-        best_params = search.best_params_
+            best_params = search.best_params_
 
-        if print_results:
-            print("Grid scores on development set:")
-            means = search.cv_results_['mean_test_score']
-            stds = search.cv_results_['std_test_score']
-            params = search.cv_results_['params']
+            if print_results:
+                print("Grid scores on development set:")
+                means = search.cv_results_['mean_test_score']
+                stds = search.cv_results_['std_test_score']
+                params = search.cv_results_['params']
 
-            for mean, std, params in zip(means, stds, params):
-                print("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params))
+                for mean, std, params in zip(means, stds, params):
+                    print("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params))
 
-        # warning_counts = dict(Counter([str(warn.category) for warn in warns]))
-        # if warning_counts:
-        #     print('Warnings during grid search:')
-        #     print(json.dumps(warning_counts, indent=4))
+            warning_counts = dict(Counter([str(warn.category) for warn in warns]))
+            if warning_counts:
+                print('Warnings during grid search:')
+                print(json.dumps(warning_counts, indent=4))
 
-        scores = evaluate(y_true, y_pred)
-        scores = [round(score, 4) for score in scores]
+            scores = evaluate(y_true, y_pred)
+            scores = [round(score, 4) for score in scores]
 
-        all_scores.append([model_spec['name'], *scores])
-        all_parameters.append([
-            model_spec['name'],
-            *[f'{key}={value}' for key, value in best_params.items()]
-        ])
+            all_scores.append([model_spec['name'], *scores])
+            all_parameters.append([
+                model_spec['name'],
+                *[f'{key}={value}' for key, value in best_params.items()]
+            ])
 
     with open('./scores.csv', 'w') as file:
         file.write(', '.join([

@@ -203,7 +203,7 @@ def onehot(variable, record):
     return vector
 
 
-def preprocess_sampler(x_format='OneHot', y_format='OneHot'):
+def preprocess(x_format='OneHot', y_format='OneHot'):
     if x_format not in ['OneHot', 'Ordinal'] or y_format not in ['OneHot', 'Ordinal']:
         raise ValueError('Invalid format')
 
@@ -241,8 +241,16 @@ def preprocess_sampler(x_format='OneHot', y_format='OneHot'):
         yield stimulus, expected, partition(observation)
 
 
-def dataset_sampler(path, y_size=1):
-    with open(path, 'r') as datafile:
+# returns a generator that yields x/y/split values in the specified format
+def dataset_sampler(x_format='OneHot', y_format='OneHot'):
+    file_name = f'datafile_{x_format}_{y_format}.csv'
+
+    if not os.path.exists(file_name):
+        write_dataset(preprocess(x_format=x_format, y_format=y_format), file_name)
+
+    y_size = 4 if y_format == 'OneHot' else 1
+
+    with open(file_name, 'r') as datafile:
         for line in datafile:
             fields = line.split(', ')
             parsed = [float(val) for val in fields[:-1]]
@@ -272,6 +280,4 @@ def test_train_split(data):
 
 # this code only runs if you run this file explicitly
 if __name__ == '__main__':
-    write_dataset(preprocess_sampler(x_format='OneHot', y_format='Ordinal'), 'datafile.csv')
-    # write_dataset(preprocess_sampler(x_format='OneHot', y_format='OneHot'), 'datafile_onehot.csv')
-    # write_dataset(preprocess_sampler(x_format='Ordinal', y_format='Ordinal'), 'datafile_ordinal.csv')
+    write_dataset(preprocess(x_format='OneHot', y_format='Ordinal'), 'datafile_OneHot_Ordinal.csv')

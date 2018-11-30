@@ -1,14 +1,13 @@
 .idea/
 data/
-datafile_onehot.csv
-datafile_ordinal.csv
-datafile.csv
+datafile_*.csv
 __pycache__/
 
 # don't store the model weights in the repository
-models/lstm/weights
-models/ann/weights
-models/simple/weights
+models/torch_lstm/weights
+models/torch_ann/weights
+models/torch_simple/weights
+models/keras_ann/model.h5
 
 parameters.csv
 scores.csv

@@ -1,3 +1,5 @@
+from preprocess import dataset_sampler
+
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -15,6 +17,7 @@ model_specifications = [
     {
         "name": "Decision Tree",
         "class": DecisionTreeClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "criterion": [
                 "gini",
@@ -31,6 +34,7 @@ model_specifications = [
     {
         "name": "Neural Network",
         "class": MLPClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "hidden_layer_sizes": [
                 [50, 10],
@@ -51,6 +55,7 @@ model_specifications = [
     {
         "name": "SVM",
         "class": SVC,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "kernel": [
                 "rbf",
@@ -65,6 +70,7 @@ model_specifications = [
     {
         "name": "Logistic Regression",
         "class": LogisticRegression,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "penalty": [
                 "l1",
@@ -79,6 +85,7 @@ model_specifications = [
     {
         "name": "K Nearest Neighbors",
         "class": KNeighborsClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "n_neighbors": [1, 5, 10],
             "weights": [
@@ -96,6 +103,7 @@ model_specifications = [
     {
         "name": "Bagging Classifier",
         "class": BaggingClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "n_estimators": [5, 10, 20],
             "max_samples": [0.5, 1, 2],
@@ -106,11 +114,13 @@ model_specifications = [
     {
         'name': 'Gaussian Naive Bayes',
         'class': GaussianNB,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         'hyperparameters': {}
     },
     {
         "name": "Random Forest",
         "class": RandomForestClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "n_estimators": [5, 10, 20],
             "criterion": [
@@ -124,6 +134,7 @@ model_specifications = [
     {
         "name": "AdaBoost",
         "class": AdaBoostClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "n_estimators": [10, 40],
             "learning_rate": [0.5, 0.75, 1.0],
@@ -137,6 +148,7 @@ model_specifications = [
     {
         "name": "Gradient Boosting Classifier",
         "class": GradientBoostingClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "learning_rate": [0.02, 0.1, 0.5],
             "n_estimators": [20, 50],
@@ -147,6 +159,7 @@ model_specifications = [
     {
         "name": "XGBoost",
         "class": XGBClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
         "hyperparameters": {
             "learning_rate": [0.02, 0.1, 0.5],
             "n_estimators": [20, 50],
@@ -162,9 +175,9 @@ model_specifications = [
 
 
 try:
-    from models.simple.network import SimpleClassifier
-    from models.ann.network import ANNClassifier
-    from models.lstm.network import LSTMClassifier
+    from models.torch_simple.network import SimpleClassifier
+    from models.torch_ann.network import ANNClassifier
+    from models.torch_lstm.network import LSTMClassifier
 
     from skorch import NeuralNetClassifier
     import torch
@@ -173,6 +186,7 @@ try:
         {
             "name": "TorchSimple",
             "class": NeuralNetClassifier,
+            "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
             "kwargs": {
                 "module": SimpleClassifier,
                 "criterion": torch.nn.CrossEntropyLoss,
@@ -190,6 +204,7 @@ try:
         {
             "name": "TorchLSTM",
             "class": NeuralNetClassifier,
+            "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
             "kwargs": {
                 "module": LSTMClassifier,
                 "criterion": torch.nn.CrossEntropyLoss,
@@ -211,6 +226,7 @@ try:
         {
             "name": "TorchANN",
             "class": NeuralNetClassifier,
+            "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
             "kwargs": {
                 "module": ANNClassifier,
                 "criterion": torch.nn.CrossEntropyLoss,
@@ -222,7 +238,8 @@ try:
                 "module__input_size": [23],
                 "module__output_size": [4],
 
-                "module__layer_sizes": [[200, 50], [100], [50]],  # dimensionality of the hidden LSTM layers
+                "module__layer_sizes": [[200, 50], [100]],
+                "module__dropout": [0.0, 0.5],
 
                 "optimizer__lr": [0.5],
             }
@@ -230,4 +247,25 @@ try:
     ])
 
 except ImportError:
-    print('PyTorch models were not loaded because pytorch is not installed.')
+    print('PyTorch models were not loaded because PyTorch is not installed.')
+
+
+try:
+    from keras.wrappers.scikit_learn import KerasClassifier
+    from models.keras_ann.network import create_model
+
+    model_specifications.extend([
+        {
+            "name": "KerasANN",
+            "class": KerasClassifier,
+            "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
+            "kwargs": {
+                "build_fn": create_model
+            },
+            "hyperparameters": {
+                'epochs': [100, 200]
+            }
+        }
+    ])
+except ImportError:
+    print('Keras models were not loaded because Keras is not installed.')
