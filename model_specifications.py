@@ -11,8 +11,6 @@ from sklearn.ensemble import GradientBoostingClassifier
 
 from xgboost import XGBClassifier
 
-use_torch = False
-
 model_specifications = [
     {
         "name": "Decision Tree",
@@ -163,29 +161,47 @@ model_specifications = [
 ]
 
 
-if use_torch:
-    from models.lstm.network import LSTMClassifier
+try:
+    from models.simple.network import SimpleClassifier
     from models.ann.network import ANNClassifier
+    from models.lstm.network import LSTMClassifier
 
     from skorch import NeuralNetClassifier
     import torch
 
     model_specifications.extend([
         {
-            "name": "TorchLSTM",
+            "name": "TorchSimple",
             "class": NeuralNetClassifier,
             "kwargs": {
-                "module": LSTMClassifier,
-                "criterion": torch.nn.NLLLoss,
+                "module": SimpleClassifier,
+                "criterion": torch.nn.CrossEntropyLoss,
                 "optimizer": torch.optim.SGD,
                 "batch_size": 1,
-                "max_epochs": 5
+                "max_epochs": 100
             },
             "hyperparameters": {
                 "module__input_size": [23],
                 "module__output_size": [4],
 
-                "module__hidden_dim": [5, 20, 50],  # dimensionality of the hidden LSTM layers
+                "optimizer__lr": [0.001, 0.1, 0.5],
+            }
+        },
+        {
+            "name": "TorchLSTM",
+            "class": NeuralNetClassifier,
+            "kwargs": {
+                "module": LSTMClassifier,
+                "criterion": torch.nn.CrossEntropyLoss,
+                "optimizer": torch.optim.SGD,
+                "batch_size": 1,
+                "max_epochs": 100
+            },
+            "hyperparameters": {
+                "module__input_size": [23],
+                "module__output_size": [4],
+
+                "module__lstm_hidden_dim": [5, 20, 50],  # dimensionality of the hidden LSTM layers
                 "module__lstm_layers": [1, 4],  # number of LSTM layers
                 "module__batch_size": [1],
 
@@ -197,18 +213,21 @@ if use_torch:
             "class": NeuralNetClassifier,
             "kwargs": {
                 "module": ANNClassifier,
-                "criterion": torch.nn.NLLLoss,
+                "criterion": torch.nn.CrossEntropyLoss,
                 "optimizer": torch.optim.SGD,
-                "batch_size": 1,
-                "max_epochs": 5
+                "batch_size": 10,
+                "max_epochs": 100
             },
             "hyperparameters": {
                 "module__input_size": [23],
                 "module__output_size": [4],
 
-                "module__layer_sizes": [[10], [20, 10], []],  # dimensionality of the hidden LSTM layers
+                "module__layer_sizes": [[200, 50], [100], [50]],  # dimensionality of the hidden LSTM layers
 
-                "optimizer__lr": [0.001, 0.1, 0.5],
+                "optimizer__lr": [0.5],
             }
         }
     ])
+
+except ImportError:
+    print('PyTorch models were not loaded because pytorch is not installed.')

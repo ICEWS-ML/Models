@@ -1,4 +1,4 @@
-from preprocess import preprocess_sampler, test_train_split
+from preprocess import dataset_sampler, preprocess_sampler, test_train_split
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -39,34 +39,76 @@ def evaluate(expected, actual):
         print(accuracy_score(expected, actual))
 
     return [
-        precision_score(expected, actual, average='micro'),
-        recall_score(expected, actual, average='micro'),
-        f1_score(expected, actual, average='micro'),
+        precision_score(expected, actual, average='macro'),
+        recall_score(expected, actual, average='macro'),
+        f1_score(expected, actual, average='macro'),
         accuracy_score(expected, actual),
     ]
 
 
 def run_lstm():
-    from models.lstm.train import train as train_lstm, test_lstm
-    # train_lstm(day_sampler, params['LSTM'])
-    test_lstm(lambda: preprocess_sampler(x_format='OneHot', y_format='Ordinal'), params['LSTM'])
+    from models.lstm.train import train_lstm, test_lstm
+    sampler = lambda: dataset_sampler('datafile.csv')
+
+    params = {
+        'input_size': 23,
+        'output_size': 4,
+
+        'lstm_hidden_dim': 20,
+        'lstm_layers': 2,
+        'batch_size': 1
+    }
+    train_lstm(sampler, params)
+    evaluate(*test_lstm(sampler, params))
 
 
-all_scores = []
-all_parameters = []
+def run_ann():
+    from models.ann.train import train_ann, test_ann
+    sampler = lambda: dataset_sampler('datafile.csv')
 
-split = test_train_split(preprocess_sampler(x_format='OneHot', y_format='Ordinal'))
-x_train, y_train, x_test, y_test = [np.array(val) for val in split]
+    params = {
+        'input_size': 23,
+        'output_size': 4,
+        'layer_sizes': (100, 20)
+    }
+    # sampler = lambda: preprocess_sampler(x_format='OneHot', y_format='Ordinal')
+    train_ann(sampler, params)
+    evaluate(*test_ann(sampler, params))
 
-# remove the singleton axis from y, ensure long datatype
-y_train, y_test = [np.squeeze(val.astype(np.int64)) for val in (y_train, y_test)]
 
-for model_spec in model_specifications:
+def run_simple():
+    from models.simple.train import train_simple, test_simple
+    sampler = lambda: dataset_sampler('datafile.csv')
 
-    # catch warnings in bulk, show frequencies for each after grid search
-    with warnings.catch_warnings(record=True) as warns:
-        # if model_spec['name'] != 'TorchANN':
-        #     continue
+    params = {
+        'input_size': 23,
+        'output_size': 4
+    }
+    # sampler = lambda: preprocess_sampler(x_format='OneHot', y_format='Ordinal')
+    train_simple(sampler, params)
+    evaluate(*test_simple(sampler, params))
+
+
+# this code only runs if you run this file explicitly
+if __name__ == '__main__':
+    # run_lstm()
+    # 1 / 0
+
+    all_scores = []
+    all_parameters = []
+
+    split = test_train_split(dataset_sampler('datafile.csv'))
+    x_train, y_train, x_test, y_test = [np.array(val) for val in split]
+
+    # remove the singleton axis from y, ensure long datatype
+    y_train, y_test = [np.squeeze(val.astype(np.int64)) for val in (y_train, y_test)]
+
+    for model_spec in model_specifications:
+
+        # catch warnings in bulk, show frequencies for each after grid search
+        # with warnings.catch_warnings(record=True) as warns:
+        if model_spec['name'] != 'TorchANN':
+            continue
 
         print(f'{model_spec["name"]}: Tuning hyper-parameters')
 
@@ -89,10 +131,10 @@ for model_spec in model_specifications:
             for mean, std, params in zip(means, stds, params):
                 print("%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params))
 
-        warning_counts = dict(Counter([str(warn.category) for warn in warns]))
-        if warning_counts:
-            print('Warnings during grid search:')
-            print(json.dumps(warning_counts, indent=4))
+        # warning_counts = dict(Counter([str(warn.category) for warn in warns]))
+        # if warning_counts:
+        #     print('Warnings during grid search:')
+        #     print(json.dumps(warning_counts, indent=4))
 
         scores = evaluate(y_true, y_pred)
         scores = [round(score, 4) for score in scores]
@@ -103,15 +145,15 @@ for model_spec in model_specifications:
             *[f'{key}={value}' for key, value in best_params.items()]
         ])
 
-with open('./scores.csv', 'w') as file:
-    file.write(', '.join([
-        'Algorithm',
-        'Avg Precision',
-        'Avg Recall',
-        'Avg F1',
-        'Accuracy'
-    ]) + '\n')
-    file.writelines([', '.join([str(j) for j in i]) + '\n' for i in all_scores])
+    with open('./scores.csv', 'w') as file:
+        file.write(', '.join([
+            'Algorithm',
+            'Avg Precision',
+            'Avg Recall',
+            'Avg F1',
+            'Accuracy'
+        ]) + '\n')
+        file.writelines([', '.join([str(j) for j in i]) + '\n' for i in all_scores])
 
-with open('./parameters.csv', 'w') as file:
-    file.writelines([', '.join(i) + '\n' for i in all_parameters])
+    with open('./parameters.csv', 'w') as file:
+        file.writelines([', '.join(i) + '\n' for i in all_parameters])

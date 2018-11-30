@@ -9,12 +9,12 @@ https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/28075/POB1
 
 The downloaded file must be placed in a new folder called ./data/
 
-2. Run `preprocessing.py`
+2. Run `preprocess.py`
 
 
 A description of the preprocessing steps is available here:  
 https://docs.google.com/document/d/1YYf_qM8MfkwBVvq8iVjK1Xh4naXmycGzkk6l7LC-JxI/edit?usp=sharing
 
 
-The final paper is available here:
+The final paper is available here:  
 https://docs.google.com/document/d/1RXUjJdxPuto0qyAJDa93SjrbcBObNgsBH5YfDHRgxxE/edit

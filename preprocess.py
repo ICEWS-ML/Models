@@ -25,9 +25,9 @@ def data_filter(record):
     return record['Country'] == 'Nepal'
 
 
-# returns the partition a record belongs to in a dataset. Note the same hash is used to build the
+# returns the partition a record belongs to in a dataset
 def partition(record):
-    return 'test' if hash(record['Event ID'] + part_salt) % 100 < split * 100 else 'train'
+    return 'test' if hash(record['Event ID'] + part_salt) % 100 > split * 100 else 'train'
 
 
 # parses strings into date objects, strings, floats and ints
@@ -241,6 +241,14 @@ def preprocess_sampler(x_format='OneHot', y_format='OneHot'):
         yield stimulus, expected, partition(observation)
 
 
+def dataset_sampler(path, y_size=1):
+    with open(path, 'r') as datafile:
+        for line in datafile:
+            fields = line.split(', ')
+            parsed = [float(val) for val in fields[:-1]]
+            yield np.array(parsed[y_size:]), np.array(parsed[:y_size]), fields[-1][:-1]
+
+
 def write_dataset(datastream, filename):
     with open(filename, 'w') as data_file:
         for X, Y, split in datastream:
@@ -262,7 +270,8 @@ def test_train_split(data):
     return x_train, y_train, x_test, y_test
 
 
-# this code only runs if you run preprocessing.py explicitly
+# this code only runs if you run this file explicitly
 if __name__ == '__main__':
-    write_dataset(preprocess_sampler(x_format='OneHot', y_format='OneHot'), 'datafile_onehot.csv')
-    write_dataset(preprocess_sampler(x_format='Ordinal', y_format='Ordinal'), 'datafile_ordinal.csv')
+    write_dataset(preprocess_sampler(x_format='OneHot', y_format='Ordinal'), 'datafile.csv')
+    # write_dataset(preprocess_sampler(x_format='OneHot', y_format='OneHot'), 'datafile_onehot.csv')
+    # write_dataset(preprocess_sampler(x_format='Ordinal', y_format='Ordinal'), 'datafile_ordinal.csv')

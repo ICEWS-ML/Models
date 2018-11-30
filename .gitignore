@@ -2,11 +2,13 @@
 data/
 datafile_onehot.csv
 datafile_ordinal.csv
+datafile.csv
 __pycache__/
 
 # don't store the model weights in the repository
 models/lstm/weights
-models/random_forest/weights
+models/ann/weights
+models/simple/weights
 
 parameters.csv
 scores.csv

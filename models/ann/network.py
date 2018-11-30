@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as f
 
 
 class ANNClassifier(torch.nn.Module):
@@ -15,19 +14,18 @@ class ANNClassifier(torch.nn.Module):
         self.input_size = input_size
         self.output_size = output_size
         self.layer_sizes = layer_sizes
-        self.activation = activation or torch.nn.Sequential()  # empty sequential is a no-op
-
-        self.dropout = dropout
+        self.activation = activation or torch.nn.Sigmoid()
 
         sizes = [input_size, *layer_sizes, output_size]
         lower, upper = iter(sizes), iter(sizes)
         next(upper)
 
         # torch can't find parameters inside lists
-        self.layers = torch.nn.ParameterList(torch.nn.Linear(*window) for window in zip(lower, upper))
+        self.layers = torch.nn.ModuleList(torch.nn.Linear(*window) for window in zip(lower, upper))
+        self.dropout = torch.nn.Dropout(dropout)
 
         # activation transforms features to probability vector
-        self.activation_final = torch.nn.LogSoftmax(dim=1)
+        self.activation_final = torch.nn.Sigmoid()
 
     def forward(self, data):
         """Given an observation, update lstm state and return the network prediction
@@ -39,6 +37,13 @@ class ANNClassifier(torch.nn.Module):
         Return:
             torch.tensor: the output of the network
         """
+
+        # make sure data type is correct
+        data = data.float()
+
         for layer in self.layers[:-1]:
-            data = f.dropout(self.activation(layer(data)), self.dropout)
-        return self.activation_final(self.layers[-1])
+            data = self.dropout(self.activation(layer(data)))
+
+        # print(self.layers[1].weight)
+
+        return self.activation_final(self.activation(self.layers[-1](data)))

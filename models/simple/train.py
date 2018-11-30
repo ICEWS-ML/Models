@@ -1,6 +1,5 @@
-from models.lstm.network import LSTMClassifier
+from models.simple.network import SimpleClassifier
 import numpy as np
-
 import torch
 
 
@@ -15,24 +14,15 @@ def filter_split(data, split='train'):
             yield x, y
 
 
-def train_lstm(data, hyperparameters, trainparameters=None):
-    torch.manual_seed(0)
+def train_simple(data, networkparameters):
 
-    trainparameters = {
-        **{'epochs': 10, 'learning_rate': 0.1},
-        **(trainparameters or {})
-    }
-
-    model = LSTMClassifier(**hyperparameters)
+    model = SimpleClassifier(**networkparameters)
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=trainparameters['learning_rate'])
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
-    for epoch in range(trainparameters['epochs']):
+    for epoch in range(100):
         for i, (x, y) in enumerate(filter_split(iterator(data), split='train')):
-            print(f'Step: {i}')
-            model.lstm_state_init(1)
-            model.zero_grad()
 
             predicted = model(torch.from_numpy(x)[None])
             loss = criterion(predicted, torch.tensor(y).long())
@@ -40,15 +30,19 @@ def train_lstm(data, hyperparameters, trainparameters=None):
             # all function calls since zero_grad() were recorded. Compute gradients from call history and update weights
             loss.backward()
             optimizer.step()
+            print(loss.item())
 
-    torch.save(model.state_dict(), './models/lstm/weights')
+            # at each iteration, reset the gradients
+            model.zero_grad()
+
+    torch.save(model.state_dict(), './models/simple/weights')
 
 
-def test_lstm(data, networkparameters):
-    model = LSTMClassifier(**networkparameters)
+def test_simple(data, networkparameters):
+    model = SimpleClassifier(**networkparameters)
 
-    model.load_state_dict(torch.load('./models/lstm/weights'))
-    model.eval()  # turn on evaluation mode
+    model.load_state_dict(torch.load('./models/simple/weights'))
+    model.eval()
 
     expected, actual = [], []
 
