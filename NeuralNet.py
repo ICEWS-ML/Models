@@ -6,32 +6,32 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
-
+import scikitplot as skplt
+import matplotlib.pyplot as plt
 import warnings
 from collections import Counter
 import json
 
-df = pd.read_csv('datafile_ordinal.csv', names=['PLOVER', 'EventDate', 'Latitude', 'Longitude', 'SourceBaseSector', 'TargetBaseSector', 'Split'])
+df = pd.read_csv('datafile_OneHot_Ordinal.csv', names=['PLOVER', 'EventDate', 'Latitude', 'Longitude', 'SourceBaseSector', 'TargetBaseSector', 'Split'])
 #df[['PLOVER']] = df[['PLOVER']].astype(float)
 
 # d = pd.DataFrame(df)
 # d.dtypes
 X = df.drop(columns=['PLOVER', 'Split'])
 Y = df.drop(columns=['EventDate', 'Latitude', 'Longitude', 'SourceBaseSector', 'TargetBaseSector', 'Split'])
-#print(type(Y))
-#print(type(X))
-#print(Y)
+
 
 # Split the dataset in two equal parts into 80:20 ratio for train:test
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.3, random_state=0)
 y_train, y_test = [np.squeeze(val) for val in (y_train, y_test)]
+
 
 tuned_parameters_NeuralNet = [{
     'hidden_layer_sizes': [(100,), (50,), (150,)],
     'activation': ['identity', 'logistic', 'tanh', 'relu'],
     'alpha': [0.0001, 0.001],
     'learning_rate': ['constant', 'adaptive', 'invscaling'],
-    'max_iter': [5000]
+    'max_iter': [1100]
 }]
 
 
@@ -68,10 +68,19 @@ for score in scores:
         print("The scores are computed on the full evaluation set.")
         print()
         y_true, y_pred = y_test, clf.predict(X_test)
+
         print(classification_report(y_true, y_pred))
         print("Detailed confusion matrix:")
         print(confusion_matrix(y_true, y_pred))
         print("Accuracy Score: \n")
         print(accuracy_score(y_true, y_pred))
 
-        print()
+
+
+#    plot ROC curve
+
+
+        y_lab = np.array(y_true).astype(int)
+        y_prob = clf.predict_proba(X_test)
+        skplt.metrics.plot_roc_curve(y_true, y_prob)
+        plt.show()
