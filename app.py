@@ -1,8 +1,11 @@
 from preprocess import dataset_sampler, test_train_split
 
+from scikitplot.metrics import plot_roc
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+
+from matplotlib import pyplot as plt
 
 import numpy as np
 
@@ -13,12 +16,12 @@ import json
 
 from model_specifications import model_specifications
 from sklearn.model_selection import GridSearchCV
-
+import os
 
 print_results = True
 
 
-def evaluate(expected, actual):
+def evaluate(expected, actual, probas, name=''):
     """Collect diagnostics about model performance
 
     Args:
@@ -27,23 +30,31 @@ def evaluate(expected, actual):
     """
 
     if print_results:
-        print("\nDetailed classification report:")
-        print("The model is trained on the full development set.")
-        print("The scores are computed on the full evaluation set.")
+        print("\nClassification report:")
         print(classification_report(expected, actual))
 
-        print("\nDetailed confusion matrix:")
+        print("\nConfusion matrix:")
         print(confusion_matrix(expected, actual))
 
-        print("Accuracy Score:")
+        print("\nAccuracy Score:")
         print(accuracy_score(expected, actual))
 
-    return [
+        if probas is not None:
+            print("\n<Receiver Operating Characteristic Plot>")
+            plot_roc(expected, probas)
+            plt.title('ROC Curve ' + name)
+            plt.show()
+
+    scores = [
         precision_score(expected, actual, average='macro'),
         recall_score(expected, actual, average='macro'),
         f1_score(expected, actual, average='macro'),
         accuracy_score(expected, actual),
     ]
+    scores = [round(score, 4) for score in scores]
+
+    with open('./scores.csv', 'a') as score_file:
+        score_file.writelines(', '.join([str(j) for j in [name, *scores]]) + '\n')
 
 
 def run_lstm():
@@ -51,7 +62,7 @@ def run_lstm():
     sampler = lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal')
 
     params = {
-        'input_size': 23,
+        'input_size': 25,
         'output_size': 4,
 
         'lstm_hidden_dim': 20,
@@ -67,7 +78,7 @@ def run_ann():
     sampler = lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal')
 
     params = {
-        'input_size': 23,
+        'input_size': 25,
         'output_size': 4,
         'layer_sizes': (100, 20)
     }
@@ -80,7 +91,7 @@ def run_simple():
     sampler = lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal')
 
     params = {
-        'input_size': 23,
+        'input_size': 25,
         'output_size': 4
     }
     train_simple(sampler, params)
@@ -100,9 +111,16 @@ def run_keras():
 
 # this code only runs if you run this file explicitly
 if __name__ == '__main__':
-
-    all_scores = []
-    all_parameters = []
+    with open('./scores.csv', 'w') as file:
+        file.write(', '.join([
+            'Algorithm',
+            'Avg Precision',
+            'Avg Recall',
+            'Avg F1',
+            'Accuracy'
+        ]) + '\n')
+    if os.path.exists('./parameters.csv'):
+        os.remove('./parameters.csv')
 
     for model_spec in model_specifications:
 
@@ -125,6 +143,11 @@ if __name__ == '__main__':
 
             y_true, y_pred = y_test, search.predict(x_test)
 
+            try:
+                y_probas = search.predict_proba(x_test)
+            except AttributeError:
+                y_probas = None
+
             best_params = search.best_params_
 
             if print_results:
@@ -141,24 +164,12 @@ if __name__ == '__main__':
                 print('Warnings during grid search:')
                 print(json.dumps(warning_counts, indent=4))
 
-            scores = evaluate(y_true, y_pred)
-            scores = [round(score, 4) for score in scores]
+            evaluate(y_true, y_pred, y_probas, name=model_spec['name'])
 
-            all_scores.append([model_spec['name'], *scores])
-            all_parameters.append([
+            formatted_params = [
                 model_spec['name'],
                 *[f'{key}={value}' for key, value in best_params.items()]
-            ])
+            ]
 
-    with open('./scores.csv', 'w') as file:
-        file.write(', '.join([
-            'Algorithm',
-            'Avg Precision',
-            'Avg Recall',
-            'Avg F1',
-            'Accuracy'
-        ]) + '\n')
-        file.writelines([', '.join([str(j) for j in i]) + '\n' for i in all_scores])
-
-    with open('./parameters.csv', 'w') as file:
-        file.writelines([', '.join(i) + '\n' for i in all_parameters])
+            with open('./parameters.csv', 'a') as params_file:
+                params_file.writelines(', '.join(formatted_params) + '\n')

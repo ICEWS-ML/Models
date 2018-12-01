@@ -12,12 +12,10 @@ class SimpleClassifier(torch.nn.Module):
         """
 
         super().__init__()
-        self.input_size = input_size
-        self.output_size = output_size
 
-        self.layer1 = torch.nn.Linear(23, 100)
+        self.layer1 = torch.nn.Linear(input_size, 100)
         self.layer2 = torch.nn.Linear(100, 20)
-        self.layer3 = torch.nn.Linear(20, 4)
+        self.layer3 = torch.nn.Linear(20, output_size)
 
     def forward(self, data):
         """Given an observation, return the network prediction

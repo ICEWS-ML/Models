@@ -14,7 +14,7 @@ def filter_split(data, split='train'):
 
 def create_model():
     model = keras.Sequential()
-    model.add(keras.layers.Dense(units=100, activation='relu', input_dim=23))
+    model.add(keras.layers.Dense(units=100, activation='relu', input_dim=25))
     model.add(keras.layers.Dense(units=50, activation='relu'))
     model.add(keras.layers.Dense(units=4, activation='softmax'))
 

@@ -1,19 +1,19 @@
 {
     "Event Date": {
-        "count": 440,
-        "mean": 1496932494.545455,
-        "min": 1483336800.0,
+        "count": 1746,
+        "mean": 1456531377.3195896,
+        "min": 1420264800.0,
         "max": 1514700000.0
     },
     "Latitude": {
-        "count": 440,
-        "mean": 27.82410295454545,
-        "sample_variance": 0.5016105662099292
+        "count": 1746,
+        "mean": 27.744729610538343,
+        "sample_variance": 0.3119717538791611
     },
     "Longitude": {
-        "count": 440,
-        "mean": 84.5874786363637,
-        "sample_variance": 2.99592425371112
+        "count": 1746,
+        "mean": 84.76289438717053,
+        "sample_variance": 2.3035384320257495
     },
     "Source Base Sector": {
         "uniques": [
@@ -23,6 +23,7 @@
             "Ideological",
             "International Government Organization",
             "International Religious",
+            "Nongovernmental Organization (International)",
             "Nongovernmental Organizations / Activists",
             "Parties",
             "Social",
@@ -37,6 +38,7 @@
             "Ideological",
             "International Government Organization",
             "International Religious",
+            "Nongovernmental Organization (International)",
             "Nongovernmental Organizations / Activists",
             "Parties",
             "Social",

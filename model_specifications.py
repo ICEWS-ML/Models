@@ -11,8 +11,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 
-from xgboost import XGBClassifier
-
 model_specifications = [
     {
         "name": "Decision Tree",
@@ -32,9 +30,9 @@ model_specifications = [
         }
     },
     {
-        "name": "Neural Network",
+        "name": "Neural Network PCA",
         "class": MLPClassifier,
-        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal', components=10),
         "hyperparameters": {
             "hidden_layer_sizes": [
                 [50, 10],
@@ -155,23 +153,30 @@ model_specifications = [
             "min_samples_split": [2, 3],
             "min_samples_leaf": [1, 5]
         }
-    },
-    {
-        "name": "XGBoost",
-        "class": XGBClassifier,
-        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
-        "hyperparameters": {
-            "learning_rate": [0.02, 0.1, 0.5],
-            "n_estimators": [20, 50],
-            "min_child_weight": [1, 3],
-            "booster": [
-                "gbtree",
-                "gblinear",
-                "dart"
-            ]
-        }
     }
 ]
+
+try:
+    from xgboost import XGBClassifier
+    model_specifications.extend([
+        {
+            "name": "XGBoost",
+            "class": XGBClassifier,
+            "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
+            "hyperparameters": {
+                "learning_rate": [0.02, 0.1, 0.5],
+                "n_estimators": [20, 50],
+                "min_child_weight": [1, 3],
+                "booster": [
+                    "gbtree",
+                    "gblinear",
+                    "dart"
+                ]
+            }
+        }
+    ])
+except ImportError:
+    print('XGBoost models were not loaded because XGBoost is not installed.')
 
 
 try:
@@ -192,13 +197,13 @@ try:
                 "criterion": torch.nn.CrossEntropyLoss,
                 "optimizer": torch.optim.SGD,
                 "batch_size": 1,
-                "max_epochs": 100
+                "max_epochs": 20
             },
             "hyperparameters": {
-                "module__input_size": [23],
+                "module__input_size": [25],
                 "module__output_size": [4],
 
-                "optimizer__lr": [0.001, 0.1, 0.5],
+                "optimizer__lr": [0.1, 0.5]
             }
         },
         {
@@ -210,17 +215,17 @@ try:
                 "criterion": torch.nn.CrossEntropyLoss,
                 "optimizer": torch.optim.SGD,
                 "batch_size": 1,
-                "max_epochs": 100
+                "max_epochs": 20
             },
             "hyperparameters": {
-                "module__input_size": [23],
+                "module__input_size": [25],
                 "module__output_size": [4],
 
-                "module__lstm_hidden_dim": [5, 20, 50],  # dimensionality of the hidden LSTM layers
+                "module__lstm_hidden_dim": [5],  # dimensionality of the hidden LSTM layers
                 "module__lstm_layers": [1, 4],  # number of LSTM layers
                 "module__batch_size": [1],
 
-                "optimizer__lr": [0.001, 0.1, 0.5],
+                "optimizer__lr": [0.1, 0.5],
             }
         },
         {
@@ -232,14 +237,14 @@ try:
                 "criterion": torch.nn.CrossEntropyLoss,
                 "optimizer": torch.optim.SGD,
                 "batch_size": 10,
-                "max_epochs": 100
+                "max_epochs": 20
             },
             "hyperparameters": {
-                "module__input_size": [23],
+                "module__input_size": [25],
                 "module__output_size": [4],
 
                 "module__layer_sizes": [[200, 50], [100]],
-                "module__dropout": [0.0, 0.5],
+                "module__dropout": [0.5],
 
                 "optimizer__lr": [0.5],
             }

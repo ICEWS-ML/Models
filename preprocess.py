@@ -4,6 +4,8 @@ from datetime import datetime
 from collections import Counter
 import numpy as np
 
+from sklearn.decomposition import PCA
+
 np.set_printoptions(suppress=True, precision=4)
 
 data_folder = 'data'
@@ -204,7 +206,7 @@ def onehot(variable, record):
 
 
 def preprocess(x_format='OneHot', y_format='OneHot'):
-    if x_format not in ['OneHot', 'Ordinal'] or y_format not in ['OneHot', 'Ordinal']:
+    if x_format not in ['OneHot', 'Ordinal', 'PCA'] or y_format not in ['OneHot', 'Ordinal']:
         raise ValueError('Invalid format')
 
     for observation in get_data():
@@ -242,11 +244,17 @@ def preprocess(x_format='OneHot', y_format='OneHot'):
 
 
 # returns a generator that yields x/y/split values in the specified format
-def dataset_sampler(x_format='OneHot', y_format='OneHot'):
+def dataset_sampler(x_format='OneHot', y_format='OneHot', components=None):
     file_name = f'datafile_{x_format}_{y_format}.csv'
 
+    if components:
+        file_name = f'datafile_PCA_{y_format}.csv'
+
     if not os.path.exists(file_name):
-        write_dataset(preprocess(x_format=x_format, y_format=y_format), file_name)
+        if components:
+            write_dataset(pca_sampler(components, x_format=x_format, y_format=y_format), file_name)
+        else:
+            write_dataset(preprocess(x_format=x_format, y_format=y_format), file_name)
 
     y_size = 4 if y_format == 'OneHot' else 1
 
@@ -255,6 +263,16 @@ def dataset_sampler(x_format='OneHot', y_format='OneHot'):
             fields = line.split(', ')
             parsed = [float(val) for val in fields[:-1]]
             yield np.array(parsed[y_size:]), np.array(parsed[:y_size]), fields[-1][:-1]
+
+
+def pca_sampler(n_components, x_format='OneHot', y_format='OneHot'):
+    x, y, split = list(zip(*preprocess(x_format=x_format, y_format=y_format)))
+    pca = PCA(n_components=n_components)
+    x_trans = pca.fit_transform(x)
+
+    print(x_trans)
+    for obs in zip(x_trans, y, split):
+        yield obs
 
 
 def write_dataset(datastream, filename):
