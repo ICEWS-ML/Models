@@ -9,5 +9,7 @@ models/torch_ann/weights
 models/torch_simple/weights
 models/keras_ann/model.h5
 
+plots/
+
 parameters.csv
 scores.csv

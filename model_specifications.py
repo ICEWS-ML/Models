@@ -30,7 +30,7 @@ model_specifications = [
         }
     },
     {
-        "name": "Neural Network PCA",
+        "name": "Neural Network PCA 10pc",
         "class": MLPClassifier,
         "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal', components=10),
         "hyperparameters": {
@@ -130,6 +130,20 @@ model_specifications = [
         }
     },
     {
+        "name": "Random Forest PCA 5pc",
+        "class": RandomForestClassifier,
+        "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal', components=5),
+        "hyperparameters": {
+            "n_estimators": [5, 10, 20],
+            "criterion": [
+                "gini",
+                "entropy"
+            ],
+            "min_samples_split": [2, 3],
+            "min_samples_leaf": [1, 5]
+        }
+    },
+    {
         "name": "AdaBoost",
         "class": AdaBoostClassifier,
         "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
@@ -206,28 +220,28 @@ try:
                 "optimizer__lr": [0.1, 0.5]
             }
         },
-        {
-            "name": "TorchLSTM",
-            "class": NeuralNetClassifier,
-            "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
-            "kwargs": {
-                "module": LSTMClassifier,
-                "criterion": torch.nn.CrossEntropyLoss,
-                "optimizer": torch.optim.SGD,
-                "batch_size": 1,
-                "max_epochs": 20
-            },
-            "hyperparameters": {
-                "module__input_size": [25],
-                "module__output_size": [4],
-
-                "module__lstm_hidden_dim": [5],  # dimensionality of the hidden LSTM layers
-                "module__lstm_layers": [1, 4],  # number of LSTM layers
-                "module__batch_size": [1],
-
-                "optimizer__lr": [0.1, 0.5],
-            }
-        },
+        # {
+        #     "name": "TorchLSTM",
+        #     "class": NeuralNetClassifier,
+        #     "datasource": lambda: dataset_sampler(x_format='OneHot', y_format='Ordinal'),
+        #     "kwargs": {
+        #         "module": LSTMClassifier,
+        #         "criterion": torch.nn.CrossEntropyLoss,
+        #         "optimizer": torch.optim.SGD,
+        #         "batch_size": 1,
+        #         "max_epochs": 20
+        #     },
+        #     "hyperparameters": {
+        #         "module__input_size": [25],
+        #         "module__output_size": [4],
+        #
+        #         "module__lstm_hidden_dim": [5],  # dimensionality of the hidden LSTM layers
+        #         "module__lstm_layers": [1, 4],  # number of LSTM layers
+        #         "module__batch_size": [1],
+        #
+        #         "optimizer__lr": [0.1, 0.5],
+        #     }
+        # },
         {
             "name": "TorchANN",
             "class": NeuralNetClassifier,

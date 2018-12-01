@@ -248,7 +248,7 @@ def dataset_sampler(x_format='OneHot', y_format='OneHot', components=None):
     file_name = f'datafile_{x_format}_{y_format}.csv'
 
     if components:
-        file_name = f'datafile_PCA_{y_format}.csv'
+        file_name = f'datafile_PCA_{y_format}_{components}.csv'
 
     if not os.path.exists(file_name):
         if components:

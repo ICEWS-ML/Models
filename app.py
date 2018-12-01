@@ -17,6 +17,7 @@ import json
 from model_specifications import model_specifications
 from sklearn.model_selection import GridSearchCV
 import os
+import shutil
 
 print_results = True
 
@@ -43,7 +44,8 @@ def evaluate(expected, actual, probas, name=''):
             print("\n<Receiver Operating Characteristic Plot>")
             plot_roc(expected, probas)
             plt.title('ROC Curve ' + name)
-            plt.show()
+            plt.savefig(f'./plots/{name}.png')
+            # plt.show()
 
     scores = [
         precision_score(expected, actual, average='macro'),
@@ -122,7 +124,13 @@ if __name__ == '__main__':
     if os.path.exists('./parameters.csv'):
         os.remove('./parameters.csv')
 
+    if os.path.exists('./plots/'):
+        shutil.rmtree('./plots/')
+    os.mkdir('./plots/')
+
     for model_spec in model_specifications:
+        # if model_spec['name'] != 'KerasANN':
+        #     continue
 
         split = test_train_split(model_spec['datasource']())
         x_train, y_train, x_test, y_test = [np.array(val) for val in split]
